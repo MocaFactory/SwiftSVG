@@ -26,8 +26,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-
-
 #if os(iOS) || os(tvOS)
     import UIKit
 #elseif os(OSX)
@@ -42,7 +40,6 @@ public protocol SVGLayerType {
 }
 
 public extension SVGLayerType where Self: CALayer {
-
     /**
      Scales a layer to aspect fit the given size.
      - Parameter rect: The `CGRect` to fit into
@@ -50,20 +47,19 @@ public extension SVGLayerType where Self: CALayer {
      */
     @discardableResult
     func resizeToFit(_ rect: CGRect) -> Self {
-        
-        let boundingBoxAspectRatio = self.boundingBox.width / self.boundingBox.height
+        let boundingBoxAspectRatio = boundingBox.width / boundingBox.height
         let viewAspectRatio = rect.width / rect.height
-        
+
         let scaleFactor: CGFloat
-        if (boundingBoxAspectRatio > viewAspectRatio) {
+        if boundingBoxAspectRatio > viewAspectRatio {
             // Width is limiting factor
-            scaleFactor = rect.width / self.boundingBox.width
+            scaleFactor = rect.width / boundingBox.width
         } else {
             // Height is limiting factor
-            scaleFactor = rect.height / self.boundingBox.height
+            scaleFactor = rect.height / boundingBox.height
         }
         let scaleTransform = CGAffineTransform(scaleX: scaleFactor, y: scaleFactor)
-        
+
         DispatchQueue.main.safeAsync {
             self.setAffineTransform(scaleTransform)
         }
@@ -76,20 +72,25 @@ public extension SVGLayerType where Self: CALayer {
  */
 
 open class SVGLayer: CAShapeLayer, SVGLayerType {
-    
     /// The minimum CGRect that fits all subpaths
-    public var boundingBox = CGRect.null    
+    public var boundingBox = CGRect.null
 }
 
 public extension SVGLayer {
-    
     /**
      Returns a copy of the given SVGLayer
      */
     var svgLayerCopy: SVGLayer? {
-        let tmp = NSKeyedArchiver.archivedData(withRootObject: self)
-        let copiedLayer = NSKeyedUnarchiver.unarchiveObject(with: tmp) as? SVGLayer
-        copiedLayer?.boundingBox = self.boundingBox
+        guard let tmp = try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false),
+              let copiedLayer = try? NSKeyedUnarchiver.unarchivedObject(ofClass: SVGLayer.self, from: tmp) else {
+            return nil
+        }
+
+        // let tmp = NSKeyedArchiver.archivedData(withRootObject: self)
+        // let copiedLayer = NSKeyedUnarchiver.unarchiveObject(with: tmp) as? SVGLayer
+        // copiedLayer?.boundingBox = boundingBox
+        
+        copiedLayer.boundingBox = boundingBox
         return copiedLayer
     }
 }
@@ -97,11 +98,10 @@ public extension SVGLayer {
 // MARK: - Fill Overrides
 
 extension SVGLayer {
-    
     /// Applies the given fill color to all sublayers
     override open var fillColor: CGColor? {
         didSet {
-            self.applyOnSublayers(ofType: CAShapeLayer.self) { (thisShapeLayer) in
+            applyOnSublayers(ofType: CAShapeLayer.self) { thisShapeLayer in
                 thisShapeLayer.fillColor = fillColor
             }
         }
@@ -111,23 +111,21 @@ extension SVGLayer {
 // MARK: - Stroke Overrides
 
 extension SVGLayer {
-    
     /// Applies the given line width to all `CAShapeLayer`s
     override open var lineWidth: CGFloat {
         didSet {
-            self.applyOnSublayers(ofType: CAShapeLayer.self) { (thisShapeLayer) in
+            self.applyOnSublayers(ofType: CAShapeLayer.self) { thisShapeLayer in
                 thisShapeLayer.lineWidth = lineWidth
             }
         }
     }
-    
+
     /// Applies the given stroke color to all `CAShapeLayer`s
     override open var strokeColor: CGColor? {
         didSet {
-            self.applyOnSublayers(ofType: CAShapeLayer.self) { (thisShapeLayer) in
+            applyOnSublayers(ofType: CAShapeLayer.self) { thisShapeLayer in
                 thisShapeLayer.strokeColor = strokeColor
             }
         }
     }
 }
-

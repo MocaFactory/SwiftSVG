@@ -39,8 +39,8 @@ class SingleSVGViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.automaticallyAdjustsScrollViewInsets = false
+         
+//        automaticallyAdjustsScrollViewInsets = false
         
         guard let url = self.svgURL else {
             return
