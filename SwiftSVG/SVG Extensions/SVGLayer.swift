@@ -81,17 +81,21 @@ public extension SVGLayer {
      Returns a copy of the given SVGLayer
      */
     var svgLayerCopy: SVGLayer? {
-        guard let tmp = try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false),
-              let copiedLayer = try? NSKeyedUnarchiver.unarchivedObject(ofClass: SVGLayer.self, from: tmp) else {
-            return nil
-        }
+        if #available(iOS 11.0, *) {
+            guard let tmp = try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false),
+                  let copiedLayer = try? NSKeyedUnarchiver.unarchivedObject(ofClass: SVGLayer.self, from: tmp) else {
+                return nil
+            }
 
-        // let tmp = NSKeyedArchiver.archivedData(withRootObject: self)
-        // let copiedLayer = NSKeyedUnarchiver.unarchiveObject(with: tmp) as? SVGLayer
-        // copiedLayer?.boundingBox = boundingBox
-        
-        copiedLayer.boundingBox = boundingBox
-        return copiedLayer
+            copiedLayer.boundingBox = boundingBox
+            return copiedLayer
+        } else {
+            let tmp = NSKeyedArchiver.archivedData(withRootObject: self)
+            let copiedLayer = NSKeyedUnarchiver.unarchiveObject(with: tmp) as? SVGLayer
+
+            copiedLayer?.boundingBox = boundingBox
+            return copiedLayer
+        }
     }
 }
 
